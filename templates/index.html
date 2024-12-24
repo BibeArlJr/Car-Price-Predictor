@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Car Price Predictor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js" integrity="sha384-0pUGZvbkm6XF6gxjEnlmuGrJXVbNuzT9qBBavbLwCsOGabYfZo0T0to5eqruptLy" crossorigin="anonymous"></script>
+  </head>
+  <body>
+    <div class="bg-dark text-light min-vh-100 d-flex align-items-center">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <div class="card shadow-lg">
+              <div class="card-header bg-primary text-white text-center py-3">
+                <h1 class="mb-0">Welcome to Car Price Predictor</h1>
+              </div>
+              <div class="card-body p-4">
+                <form method="post" accept-charset="utf-8">
+                  <!-- Company Selection -->
+                  <!-- Company Selection -->
+<div class="mb-3">
+  <label for="company" class="form-label"><b>Select Company:</b></label>
+  <select class="form-select" id="company" name="company" required onchange="load_car_models(this.id, 'car_models')">
+    <option value="" disabled selected>Select car company</option>
+    {% for company in companies %}
+    <option value="{{ company }}">{{ company }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+<!-- Car Model Selection -->
+<div class="mb-3">
+  <label for="model" class="form-label"><b>Select Car Model:</b></label>
+  <select class="selectpicker form-control" id="car_models" name="car_model" required>
+    <option value="" disabled selected>Select car model</option>
+    <!-- Options will be dynamically added by JavaScript -->
+  </select>
+</div>
+
+                  <!-- Year of Purchase -->
+                  <div class="mb-3">
+                    <label for="year" class="form-label"><b>Select Year of Purchase:</b></label>
+                    <select class="form-select" id="year" name="year" required>
+                      {% for year in years %}
+                      <option value="{{ year }}" >{{ year }}</option>
+                      {% endfor %}
+                      <!-- Add options dynamically -->
+                    </select>
+                  </div>
+                  <!-- Fuel Type -->
+                  <div class="mb-3">
+                    <label for="fuel_type" class="form-label"><b>Select Fuel Type:</b></label>
+                    <select class="form-select" id="fuel_type" name="fuel_type" required>
+                      {% for fuel_type in fuel_types %}
+                      <option value="{{ fuel_type }}" >{{ fuel_type }}</option>
+                      {% endfor %}
+                      <!-- Add options dynamically -->
+                    </select>
+                  </div>
+                  <!-- Kilometers Driven -->
+                  <div class="mb-3">
+                    <label for="kilo_driven" class="form-label"><b>Enter Number of Kilometers Travelled:</b></label>
+                    <input class="form-control" type="text" id="kilo_driven" name="kilo_driven" placeholder="Enter kilometers driven" required>
+                  </div>
+                  <!-- Submit Button -->
+                  <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg" onclick="send_data()">Predict Price</button>
+                  </div>
+                </form>
+
+                <br>
+
+                <div class="col-12" style="text-align: center">
+                  <h1><span id="prediction"></span></h1>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+
+function load_car_models(company_id, car_models_id) {
+    // Step 1: Get references to the dropdowns
+    var company = document.getElementById(company_id); // Get the company dropdown element
+    var car_model = document.getElementById(car_models_id); // Get the car models dropdown element
+
+    // Step 2: Validate the elements
+    if (!company || !car_model) {
+        console.error("Invalid IDs: Ensure the elements exist.");
+        return; // Exit the function if any element is not found
+    }
+
+    // Step 3: Get the selected company value
+    var selectedCompany = company.value; // Fetch the selected company's value
+    console.log("Selected Company:", selectedCompany); // Log the selected company for debugging
+
+    // Step 4: Clear the car models dropdown
+    car_model.innerHTML = ""; // Clear all existing options in the car models dropdown
+
+    // Step 5: Add car models dynamically based on the selected company
+    {% for company in companies %}
+    if (selectedCompany === "{{ company }}") { // Check if the selected company matches the current loop value
+        {% for model in car_models %}
+        {% if company in model %}
+        // Step 6: Create a new option element for the matching car model
+        var newOption = document.createElement("option");
+        newOption.value = "{{ model }}"; // Set the option's value
+        newOption.textContent = "{{ model }}"; // Set the option's display text
+        car_model.appendChild(newOption); // Add the option to the car models dropdown
+        {% endif %}
+        {% endfor %}
+    }
+    {% endfor %}
+}
+
+function form_handler(event){
+  event.preventDefault();
+}
+
+function send_data() {
+  // Suppress form default behavior
+  document.querySelector('form').addEventListener('submit', form_handler);
+
+  // Send and receive data to predict method
+  var fd = new FormData(document.querySelector('form'));
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('POST', '/predict', true);
+  document.getElementById('prediction').innerHTML = "Wait! Predicting Price ......";
+
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+      // Update the prediction result on the HTML
+      document.getElementById('prediction').innerHTML = "Prediction: Rs. " + xhr.responseText;
+    }
+  };
+
+  xhr.onerror = function () {
+    document.getElementById('prediction').innerHTML = "Error occurred while predicting the price.";
+  };
+
+  xhr.send(fd);
+}
+
+
+</script>
+  </body>
+  
+</html>
